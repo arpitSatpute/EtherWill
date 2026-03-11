@@ -4,10 +4,13 @@ pragma solidity ^0.8.27;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
+
 
 
 contract Inheritance is Ownable, ReentrancyGuard{
 
+    AggregatorV3Interface internal datafeed;
     uint256 public constant INACTIVITY_PERIOD = 180 days;
 
     
@@ -16,9 +19,9 @@ contract Inheritance is Ownable, ReentrancyGuard{
         uint256 amount;
     }
     
-    mapping(address => Will) public heirWill;  // relation of heir to will
-    mapping(address => address) public heir;   // relation of beneficiary => heir
-    mapping(address => uint256) public lastPing; // heir => ping_time
+    mapping(address => Will) public heirWill;       // relation of heir to will
+    mapping(address => address) public heir;        // relation of beneficiary => heir
+    mapping(address => uint256) public lastPing;    // heir => ping_time
 
     
     error NotABeneficiary(string message);
@@ -36,18 +39,23 @@ contract Inheritance is Ownable, ReentrancyGuard{
     event WillRevoked(address heir, uint256 amount);
 
     constructor() Ownable(msg.sender) {
-
+        datafeed = AggregatorV3Interface(0x694AA1769357215DE4FAC081bf1f309aDC325306);
     }
 
     // Set Will and Beneficiary
 
     function setWillAndBeneficiary(address _beneficiary) public payable {
-        
+
+        require(_beneficiary != address(0), "Invalid beneficiary");        
         require(_beneficiary != msg.sender, "Cannot set yourself as beneficiary");
         require(heirWill[msg.sender].beneficiary == address(0), "Will already exists");
 
         // check amount is equivalent to 100 usd after integrating chain link oracle
-        require(msg.value > 0, "Value must be Greater than 0.");
+
+        uint256 ethInUsd = getAnswerFromChainLinkDataFeed(msg.value);
+        uint256 minUsd = 100 * (10 ** uint256(datafeed.decimals()));
+        require(ethInUsd >= minUsd, "Require at least $100");
+
 
         heirWill[msg.sender] = Will({
             beneficiary: _beneficiary,
@@ -64,9 +72,10 @@ contract Inheritance is Ownable, ReentrancyGuard{
     // Update Will
 
     function updateBeneficiary(address _newBeneficiary) external {
-       
+
+       require(_newBeneficiary != address(0), "Invalid beneficiary");       
        require(heirWill[msg.sender].beneficiary != address(0), "No will found");
-       require(_newBeneficiary != address(0), "Beneficiary address can't be null or 0");
+       require(_newBeneficiary != heirWill[msg.sender].beneficiary, "Beneficiary address is similar to existing");
        require(_newBeneficiary != msg.sender, "Heir can't be a beneficiary");
 
        address oldBeneficiary = heirWill[msg.sender].beneficiary;
@@ -163,6 +172,7 @@ contract Inheritance is Ownable, ReentrancyGuard{
 
             delete heirWill[heirOfBeneficiary];
             delete heir[msg.sender];
+            delete lastPing[heirOfBeneficiary];
             
             // send ether to beneficiary
 
@@ -194,6 +204,20 @@ contract Inheritance is Ownable, ReentrancyGuard{
         return (heirWill[_heir], remaining);
     }
 
+
+    // Getting ETH in USD from chainlink oracle
+
+    function getAnswerFromChainLinkDataFeed(uint256 amount) public view returns(uint256) {
+        (, int256 answer, , , ) = datafeed.latestRoundData();
+
+        require(answer > 0, "Invalid price");
+
+        uint256 ethPrice = uint256(answer);
+        uint256 usdValue = (amount * ethPrice) / 1e18;
+ 
+
+        return usdValue;
+    }    
 
     receive() external payable {
 
