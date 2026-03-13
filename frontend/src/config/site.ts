@@ -22,7 +22,7 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/etherwill",
-    twitter: "https://twitter.com/etherwill",
+    github: "https://github.com/arpitSatpute/EtherWill",
+    twitter: "https://x.com/arpits_jsx",
   },
 };

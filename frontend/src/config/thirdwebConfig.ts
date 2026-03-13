@@ -7,4 +7,4 @@ export const client = createThirdwebClient({
   clientId: clientId,
 });
 
-export const CONTRACT_ADDRESS = "0x19a4d93d2cd86ab552c3ac3e8b6f56f9c129e069";
+export const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
