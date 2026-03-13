@@ -2,12 +2,55 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link href="logo.png" rel="icon" type="image/png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>etherwill</title>
+    <title>InsightYield - Defi Yield Aggregator</title>
+    <meta key="title" content="ChainQuery - DeFi Yield Aggregator" property="og:title" />
+    <meta
+      content="Discover and optimize DeFi yield strategies with advanced analytics and real-time insights."
+      property="og:description"
+    />
+    <meta
+      content="Discover and optimize DeFi yield strategies with advanced analytics and real-time insights."
+      name="description"
+    />
+    <meta
+      key="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+      name="viewport"
+    />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module">
+      // Initialize theme before React renders to prevent FOWT (Flash Of Wrong Theme)
+      (function() {
+        try {
+          const theme = localStorage.getItem('theme') || 'dark';
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          // Fallback to dark theme if localStorage fails
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+    <script>
+      // apply saved theme before React mounts to avoid FOUC and wrong defaults
+      (function () {
+        try {
+          const stored = localStorage.getItem('theme');
+          if (stored === 'dark' || (!stored && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
